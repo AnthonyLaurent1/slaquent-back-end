@@ -76,6 +76,7 @@ Exemple de room :
 5. GET /api/rooms/:roomId/messages
 
 - Description : lister les messages d'une room.
+- Effet de bord : si `userId` est le destinataire de messages non lus de la room, le backend renseigne `readAt` au moment de cet appel. Ce comportement ne s'applique pas à `GET /api/users/:userId/rooms` utilisé pour les aperçus de l'accueil.
 - Paramètres : `:roomId` (entier).
 - Query params :
   - `userId` (entier) — l'utilisateur qui demande (vérification d'accès)
@@ -93,6 +94,7 @@ Exemple de message :
 "createdAt": "2026-04-21T...",
 "deliveredAt": null,
 "readAt": null,
+"isRead": false,
 "sender": { "id": 1, "username": "alice" },
 "recipient": { "id": 2, "username": "bob" }
 }

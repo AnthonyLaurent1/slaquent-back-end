@@ -14,6 +14,13 @@ function ensureInteger(value, errorCode) {
   }
 }
 
+function serializeMessage(message) {
+  return {
+    ...message,
+    isRead: Boolean(message.readAt),
+  };
+}
+
 export class ChatService {
   constructor() {
     this.users = new UserRepository();
@@ -94,7 +101,10 @@ export class ChatService {
       throw new Error("ROOM_ACCESS_DENIED");
     }
 
-    return this.messages.listByRoom(roomId, limit);
+    await this.messages.markRoomMessagesRead(roomId, userId);
+
+    const messages = await this.messages.listByRoom(roomId, limit);
+    return messages.map(serializeMessage);
   }
 
   async createMessage(senderId, recipientId, content) {
@@ -118,13 +128,14 @@ export class ChatService {
 
     return {
       room,
-      message,
+      message: serializeMessage(message),
     };
   }
 
   async flushPendingMessages(recipientId) {
     await this.requireUser(recipientId);
-    return this.messages.listPendingForRecipient(recipientId);
+    const messages = await this.messages.listPendingForRecipient(recipientId);
+    return messages.map(serializeMessage);
   }
 
   async markMessageDelivered(messageId) {

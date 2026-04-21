@@ -37,6 +37,19 @@ export class MessageRepository {
     });
   }
 
+  async markRoomMessagesRead(roomId, recipientId) {
+    return prisma.message.updateMany({
+      where: {
+        roomId,
+        recipientId,
+        readAt: null,
+      },
+      data: {
+        readAt: new Date(),
+      },
+    });
+  }
+
   async markDelivered(messageId) {
     return prisma.message.update({
       where: { id: messageId },
