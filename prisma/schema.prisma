@@ -3,34 +3,54 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-}
-
-model Room {
-  id       Int       @id @default(autoincrement())
-  name     String
-  messages Message[]
-
-  @@map("room")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  username String    @unique
-  messages Message[]
+  id                 Int          @id @default(autoincrement())
+  username           String       @unique @db.VarChar(50)
+  createdAt          DateTime     @default(now()) @map("created_at")
+  initiatedRooms     DirectRoom[] @relation("DirectRoomUserA")
+  receivedRooms      DirectRoom[] @relation("DirectRoomUserB")
+  sentMessages       Message[]    @relation("MessageSender")
+  receivedMessages   Message[]    @relation("MessageRecipient")
 
   @@map("users")
 }
 
+model DirectRoom {
+  id        Int       @id @default(autoincrement())
+  userAId   Int       @map("user_a_id")
+  userBId   Int       @map("user_b_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  lastMessageId Int? @map("last_message_id")
+  userA     User      @relation("DirectRoomUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User      @relation("DirectRoomUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+  @@map("direct_room")
+}
+
 model Message {
-  id        Int      @id @default(autoincrement())
-  roomId    Int      @map("room_id")
-  userId    Int      @map("users_id")
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
+  id           Int        @id @default(autoincrement())
+  roomId       Int        @map("room_id")
+  senderId     Int        @map("sender_id")
+  recipientId  Int        @map("recipient_id")
+  content      String     @db.Text
+  createdAt    DateTime   @default(now()) @map("created_at")
+  deliveredAt  DateTime?  @map("delivered_at")
+  readAt       DateTime?  @map("read_at")
+  room         DirectRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender       User       @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient    User       @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  @@index([roomId, createdAt])
+  @@index([recipientId, deliveredAt])
+  @@index([recipientId, readAt])
   @@map("message")
 }

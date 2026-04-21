@@ -1,20 +1,9 @@
-import express from "express";
+import "dotenv/config";
+import { createServer } from "./src/server.js";
 
-const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT ?? 3000);
+const { httpServer } = createServer();
 
-app.get("/", (req, res) => {
-    res.send("Ma page d'accueil");
-});
-
-app.get("/chat", (req, res) => {
-    res.send("Page du chat");
-});
-
-app.get("/rooms", (req, res) => {
-    res.send("Liste des salons");
-});
-
-app.listen(PORT, () => {
-    console.log(`Serveur lancé sur http://localhost:${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
 });
