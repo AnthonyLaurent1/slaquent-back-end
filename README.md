@@ -5,6 +5,7 @@ Ce document décrit les routes HTTP exposées par le backend et l'usage du WebSo
 Base URL
 
 - Préfixe des routes API : `/api` (le serveur monte `apiRouter` sur `/api`).
+- Swagger UI : `/api-docs` (ex: `http://localhost:3000/api-docs`).
 - Le WebSocket utilise Socket.IO sur la même origine que le serveur HTTP (ex: `https://api.example.com` ou `http://localhost:3000`).
 
 Format d'erreur

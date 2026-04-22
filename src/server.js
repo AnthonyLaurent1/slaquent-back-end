@@ -2,7 +2,9 @@ import http from "node:http";
 import express from "express";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
+import swaggerUi from "swagger-ui-express";
 import { apiRouter } from "./routes/api.routes.js";
+import { openApiDocument } from "./config/openapi.js";
 import { registerChatGateway } from "./ws/chat.gateway.js";
 
 export function createServer() {
@@ -18,6 +20,7 @@ export function createServer() {
   app.use(cors());
   app.use(express.json());
   app.use(express.static("public"));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
   app.use("/api", apiRouter);
 
   app.get("/health", (req, res) => {

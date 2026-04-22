@@ -10,7 +10,7 @@ function normalizePair(firstUserId, secondUserId) {
 
 function ensureInteger(value, errorCode) {
   if (!Number.isInteger(value)) {
-    throw new Error(errorCode);
+    throw new TypeError(errorCode);
   }
 }
 
