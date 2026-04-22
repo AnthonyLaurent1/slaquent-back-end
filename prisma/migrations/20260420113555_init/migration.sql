@@ -26,6 +26,7 @@ CREATE TABLE "message" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "delivered_at" TIMESTAMP(3),
     "read_at" TIMESTAMP(3),
+    "is_public" BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT "message_pkey" PRIMARY KEY ("id")
 );

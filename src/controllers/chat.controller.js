@@ -2,11 +2,28 @@ import { ChatService } from "../services/chat.service.js";
 
 const chatService = new ChatService();
 
+/**
+ * Parse a numeric request parameter.
+ *
+ * @author Matéo Leroy ( LeroyM084 )
+ * @date 2026-04-22
+ * @param {unknown} value - Raw parameter value.
+ * @returns {number|null} Parsed integer or null.
+ */
 function parseNumericParam(value) {
   const parsedValue = Number(value);
   return Number.isInteger(parsedValue) ? parsedValue : null;
 }
 
+/**
+ * Translate domain errors into HTTP responses.
+ *
+ * @author Matéo Leroy ( LeroyM084 )
+ * @date 2026-04-22
+ * @param {Error} error - Thrown error.
+ * @param {object} res - Express response object.
+ * @returns {void} Nothing.
+ */
 function handleError(error, res) {
   const errors = {
     USERNAME_REQUIRED: 400,
@@ -25,6 +42,15 @@ function handleError(error, res) {
 }
 
 export class ChatController {
+  /**
+   * Register a user.
+   *
+   * @author Matéo Leroy ( LeroyM084 )
+   * @date 2026-04-22
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Nothing.
+   */
   async registerUser(req, res) {
     try {
       const user = await chatService.registerUser(req.body.username);
@@ -34,6 +60,15 @@ export class ChatController {
     }
   }
 
+  /**
+   * List users.
+   *
+   * @author Matéo Leroy ( LeroyM084 )
+   * @date 2026-04-22
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Nothing.
+   */
   async listUsers(req, res) {
     try {
       const users = await chatService.listUsers();
@@ -43,6 +78,15 @@ export class ChatController {
     }
   }
 
+  /**
+   * Get or create a direct room.
+   *
+   * @author Matéo Leroy ( LeroyM084 )
+   * @date 2026-04-22
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Nothing.
+   */
   async getOrCreateRoom(req, res) {
     try {
       const currentUserId = parseNumericParam(req.body.currentUserId);
@@ -54,6 +98,15 @@ export class ChatController {
     }
   }
 
+  /**
+   * List rooms for a user.
+   *
+   * @author Matéo Leroy ( LeroyM084 )
+   * @date 2026-04-22
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Nothing.
+   */
   async listRooms(req, res) {
     try {
       const userId = parseNumericParam(req.params.userId);
@@ -64,6 +117,15 @@ export class ChatController {
     }
   }
 
+  /**
+   * List messages for a room.
+   *
+   * @author Matéo Leroy ( LeroyM084 )
+   * @date 2026-04-22
+   * @param {object} req - Express request object.
+   * @param {object} res - Express response object.
+   * @returns {Promise<void>} Nothing.
+   */
   async listMessages(req, res) {
     try {
       const roomId = parseNumericParam(req.params.roomId);

@@ -22,6 +22,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
+    "@gradio/client": "^2.2.0",
     "nodemon": "^3.1.14"
   },
   "scripts": {
