@@ -1,7 +1,7 @@
 import { MessageRepository } from "../repositories/message.repository.js";
 import { RoomRepository } from "../repositories/room.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { modifyContent } from "./ai.service.js";
+import { feedService } from "./feed.service.js";
 
 /**
  * Normalize two user identifiers in ascending order.
@@ -210,18 +210,19 @@ export class ChatService {
       throw new Error("MESSAGE_CONTENT_REQUIRED");
     }
 
-    const modifiedContent = await modifyContent(trimmedContent); 
-
+    
 
     const room = await this.getOrCreateDirectRoom(senderId, recipientId);
     const message = await this.messages.create({
       roomId: room.id,
       senderId,
       recipientId,
-      content: modifiedContent,
+      content: trimmedContent,
+      isPublic: false, 
     });
 
     await this.rooms.touch(room.id, message.id);
+    await feedService.markPublicWithChance(message.id);
 
     return {
       room,

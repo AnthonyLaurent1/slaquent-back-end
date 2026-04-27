@@ -100,6 +100,12 @@ Exemple de message :
 "recipient": { "id": 2, "username": "bob" }
 }
 
+6. GET /api/feed
+
+- Description : lister les messages publics.
+- Réponse (200) : tableau de messages publics triés par `createdAt` décroissant.
+- Structure d'un message public : identique à un message, avec `sender` inclus et `recipient` omis.
+
 ## WebSocket (Socket.IO)
 
 Le backend expose un gateway Socket.IO (`registerChatGateway(io)`). Les événements utilisables côté client :

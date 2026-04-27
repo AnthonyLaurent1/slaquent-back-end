@@ -1,6 +1,8 @@
 import { ChatService } from "../services/chat.service.js";
+import { FeedService } from "../services/feed.service.js";
 
 const chatService = new ChatService();
+const feedService = new FeedService();
 
 /**
  * Parse a numeric request parameter.
@@ -132,6 +134,15 @@ export class ChatController {
       const userId = parseNumericParam(req.query.userId);
       const limit = parseNumericParam(req.query.limit) ?? 50;
       const messages = await chatService.listMessages(roomId, userId, limit);
+      res.json(messages);
+    } catch (error) {
+      handleError(error, res);
+    }
+  }
+
+  async listPublicMessages(req, res) {
+    try {
+      const messages = await feedService.listPublicMessages();
       res.json(messages);
     } catch (error) {
       handleError(error, res);
