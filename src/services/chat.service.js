@@ -2,6 +2,7 @@ import { MessageRepository } from "../repositories/message.repository.js";
 import { RoomRepository } from "../repositories/room.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { feedService } from "./feed.service.js";
+import * as cache from "../cache/cache.service.js";
 
 /**
  * Normalize two user identifiers in ascending order.
@@ -187,8 +188,16 @@ export class ChatService {
 
     await this.messages.markRoomMessagesRead(roomId, userId);
 
+    const cacheKey = `room:${roomId}:messages:limit:${limit}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return cached.map(serializeMessage);
+    }
+
     const messages = await this.messages.listByRoom(roomId, limit);
-    return messages.map(serializeMessage);
+    const serialized = messages.map(serializeMessage);
+    await cache.set(cacheKey, serialized, 60);
+    return serialized;
   }
 
   /**
@@ -223,6 +232,19 @@ export class ChatService {
 
     await this.rooms.touch(room.id, message.id);
     await feedService.markPublicWithChance(message.id);
+
+    // update recent cached list and invalidate page caches
+    try {
+      await cache.lpushTrim(`room:${room.id}:recent`, message, Number(100));
+      // simple invalidation: delete first few page caches
+      for (let p = 0; p < 3; p++) {
+        await cache.del(`room:${room.id}:messages:limit:${(p + 1) * 50}`);
+      }
+      await cache.publish(`room:${room.id}:messages`, { type: 'message:new', payload: message });
+    } catch (e) {
+      // caching failures shouldn't block message creation
+      console.warn('cache error', e?.message || e);
+    }
 
     return {
       room,

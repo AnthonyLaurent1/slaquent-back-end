@@ -1,4 +1,5 @@
 import { chatService } from "../controllers/chat.controller.js";
+import * as cache from "../cache/cache.service.js";
 import { PresenceManager } from "./presence.manager.js";
 
 const presence = new PresenceManager();
@@ -89,6 +90,14 @@ export function registerChatGateway(io) {
         });
 
         io.to(personalChannel(recipientId)).emit("message:received", message);
+
+        // publish event for other instances to consume
+        try {
+          await cache.publish(`room:${room.id}:messages`, { type: 'message:new', payload: message });
+        } catch (err) {
+          // non-fatal — log for debugging
+          console.debug('cache publish error', err?.message || err);
+        }
 
         callback?.({
           ok: true,

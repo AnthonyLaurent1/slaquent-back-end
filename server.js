@@ -1,4 +1,5 @@
 import "dotenv/config";
+/* global process */
 import { createServer } from "./src/server.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
