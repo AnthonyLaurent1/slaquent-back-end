@@ -14,6 +14,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "ollama": "^0.6.3",
+    "openai": "^6.34.0",
     "prisma": "^6.19.3",
     "prisma-client": "^0.0.0",
     "socket.io": "^4.8.3",
@@ -22,6 +24,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
+    "@gradio/client": "^2.2.0",
     "nodemon": "^3.1.14"
   },
   "scripts": {

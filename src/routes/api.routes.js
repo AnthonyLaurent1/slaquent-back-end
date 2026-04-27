@@ -8,3 +8,4 @@ apiRouter.post("/users/register", (req, res) => chatController.registerUser(req,
 apiRouter.get("/users/:userId/rooms", (req, res) => chatController.listRooms(req, res));
 apiRouter.post("/rooms", (req, res) => chatController.getOrCreateRoom(req, res));
 apiRouter.get("/rooms/:roomId/messages", (req, res) => chatController.listMessages(req, res));
+apiRouter.get("/feed", (req, res) => chatController.listPublicMessages(req, res));

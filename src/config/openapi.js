@@ -112,6 +112,21 @@ export const openApiDocument = {
           },
         ],
       },
+      PublicMessage: {
+        allOf: [
+          {
+            $ref: "#/components/schemas/MessagePreview",
+          },
+          {
+            type: "object",
+            properties: {
+              sender: {
+                $ref: "#/components/schemas/User",
+              },
+            },
+          },
+        ],
+      },
       Room: {
         type: "object",
         required: ["id", "userA", "userB"],
@@ -399,6 +414,27 @@ export const openApiDocument = {
               "application/json": {
                 schema: {
                   $ref: "#/components/schemas/ErrorResponse",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/feed": {
+      get: {
+        tags: ["Messages"],
+        summary: "Lister les messages publics",
+        responses: {
+          200: {
+            description: "Liste des messages publics",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "array",
+                  items: {
+                    $ref: "#/components/schemas/PublicMessage",
+                  },
                 },
               },
             },

@@ -48,6 +48,7 @@ model Message {
   room         DirectRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   sender       User       @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
   recipient    User       @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  isPublic    Boolean     @map("is_public")
 
   @@index([roomId, createdAt])
   @@index([recipientId, deliveredAt])

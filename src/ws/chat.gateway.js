@@ -3,10 +3,27 @@ import { PresenceManager } from "./presence.manager.js";
 
 const presence = new PresenceManager();
 
+/**
+ * Build the personal socket channel name for a user.
+ *
+ * @author Matéo Leroy ( LeroyM084 )
+ * @date 2026-04-22
+ * @param {number} userId - User identifier.
+ * @returns {string} Personal channel name.
+ */
 function personalChannel(userId) {
   return `user:${userId}`;
 }
 
+/**
+ * Emit current presence state for a user.
+ *
+ * @author Matéo Leroy ( LeroyM084 )
+ * @date 2026-04-22
+ * @param {object} io - Socket.IO server instance.
+ * @param {number} userId - User identifier.
+ * @returns {void} Nothing.
+ */
 function emitPresence(io, userId) {
   io.emit("presence:updated", {
     userId,
@@ -14,6 +31,14 @@ function emitPresence(io, userId) {
   });
 }
 
+/**
+ * Register chat gateway socket events.
+ *
+ * @author Matéo Leroy ( LeroyM084 )
+ * @date 2026-04-22
+ * @param {object} io - Socket.IO server instance.
+ * @returns {void} Nothing.
+ */
 export function registerChatGateway(io) {
   io.on("connection", (socket) => {
     socket.on("session:register", async (payload, callback) => {
