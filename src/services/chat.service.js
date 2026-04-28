@@ -213,13 +213,12 @@ export class ChatService {
   async createMessage(senderId, recipientId, content) {
     ensureInteger(senderId, "USER_NOT_FOUND");
     ensureInteger(recipientId, "USER_NOT_FOUND");
+    process.stdout.write(`Creating message from user ${senderId} to user ${recipientId}\n`);
 
     const trimmedContent = content?.trim();
     if (!trimmedContent) {
       throw new Error("MESSAGE_CONTENT_REQUIRED");
     }
-
-    
 
     const room = await this.getOrCreateDirectRoom(senderId, recipientId);
     const message = await this.messages.create({
@@ -227,24 +226,33 @@ export class ChatService {
       senderId,
       recipientId,
       content: trimmedContent,
-      isPublic: false, 
+      isPublic: false,
     });
 
     await this.rooms.touch(room.id, message.id);
-    await feedService.markPublicWithChance(message.id);
 
-    // update recent cached list and invalidate page caches
-    try {
-      await cache.lpushTrim(`room:${room.id}:recent`, message, Number(100));
-      // simple invalidation: delete first few page caches
-      for (let p = 0; p < 3; p++) {
-        await cache.del(`room:${room.id}:messages:limit:${(p + 1) * 50}`);
-      }
-      await cache.publish(`room:${room.id}:messages`, { type: 'message:new', payload: message });
-    } catch (e) {
-      // caching failures shouldn't block message creation
-      console.warn('cache error', e?.message || e);
+    // schedule cache updates (non-blocking) so caller is not delayed
+    cache.lpushTrim(`room:${room.id}:recent`, message, Number(100)).catch((e) => {
+      process.stderr.write(`cache lpushTrim error ${e?.message || e}\n`);
+    });
+    // simple invalidation: delete first few page caches (non-blocking)
+    for (let p = 0; p < 3; p++) {
+      cache.del(`room:${room.id}:messages:limit:${(p + 1) * 50}`).catch((e) => {
+        process.stderr.write(`cache del error ${e?.message || e}\n`);
+      });
     }
+    cache.publish(`room:${room.id}:messages`, { type: "message:new", payload: message }).catch((e) => {
+      process.stderr.write(`cache publish error ${e?.message || e}\n`);
+    });
+
+    // perform feed analysis in background (may be slow)
+    void (async () => {
+      try {
+        await feedService.markPublicWithChance(message.id);
+      } catch (e) {
+        process.stderr.write(`feed analysis error ${e?.message || e}\n`);
+      }
+    })();
 
     return {
       room,

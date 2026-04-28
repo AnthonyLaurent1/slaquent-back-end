@@ -5,14 +5,14 @@ module.exports = {
     es2021: true,
   },
   globals: {
-    process: 'readonly',
+    process: "readonly",
   },
   parserOptions: {
     ecmaVersion: 2021,
-    sourceType: 'module',
+    sourceType: "module",
   },
-  extends: ['eslint:recommended'],
+  extends: ["eslint:recommended"],
   rules: {
-    'no-unused-vars': ['warn', { args: 'after-used', ignoreRestSiblings: true }],
+    "no-unused-vars": ["warn", { args: "after-used", ignoreRestSiblings: true }],
   },
 };

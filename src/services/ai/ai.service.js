@@ -7,40 +7,76 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const systemPromptPath = path.join(__dirname, "system_prompt.txt");
 
-const system_prompt = fs.readFileSync(systemPromptPath, "utf-8");
+// Utilisation de Qwen2.5 ou Qwen3 (selon dispo sur le router)
+// Le format 0.5B / 0.6B est parfait pour ton besoin de rapidité.
+const MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct:featherless-ai";
 
-let globalClient = null;
-
-async function initializeOllamaClient() {
-    // Ollama expose un endpoint compatible OpenAI sur le port 11434
-    globalClient = new OpenAI({
-        baseURL: "http://127.0.0.1:11434/v1", 
-        apiKey: "ollama", // Une clé est requise par le SDK mais ignorée par Ollama
-    });
-    console.warn("Client initialisé sur l'instance locale Ollama");
+let systemPrompt = "";
+try {
+  systemPrompt = fs.readFileSync(systemPromptPath, "utf-8");
+} catch {
+  // missing system prompt is non-fatal
 }
 
-export async function modifyContent(content) {
-    console.log("Contenu original:", content);
-    if (!globalClient) {
-        await initializeOllamaClient();
+let client = null;
+
+function ensureClient() {
+  if (client) {return;};
+
+  const apiKey = process.env.HF_TOKEN;
+  if (!apiKey) {
+    throw new Error("HF_TOKEN is not set");
+  }
+
+  client = new OpenAI({
+    baseURL: "https://router.huggingface.co/v1",
+    apiKey,
+  });
+}
+
+/**
+ * Generate text from the model via Hugging Face router.
+ * @param {string} text - User input text.
+ * @returns {Promise<string>} Model response text.
+ */
+export async function generateText(text) {
+  process.stdout.write(`Vérification via Qwen (0.6B) : ${text.substring(0, 30)}...\n`);
+  ensureClient();
+
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: "system", content: systemPrompt });
+  }
+
+  // Pour Qwen, un prompt très direct fonctionne mieux.
+  const promptInstruction = `Message: "${text}"\n\nRéponds par 'oui' ou 'non' uniquement.`;
+
+  messages.push({ role: "user", content: promptInstruction });
+
+  try {
+    const response = await client.chat.completions.create({
+      model: MODEL_NAME,
+      messages,
+      temperature: 0.1,
+      max_tokens: 3, // Légèrement augmenté à 3 pour gérer d'éventuels espaces
+      // On ajoute les balises spécifiques de Qwen pour forcer l'arrêt propre
+      stop: ["<|im_end|>", "<|endoftext|>", "\n", ".", " "],
+    });
+
+    // Nettoyage strict : on ne garde que les lettres a-z
+    const rawOut = response?.choices?.[0]?.message?.content ?? "";
+    const out = rawOut.toLowerCase().trim().replaceAll(/[^a-z]/g, "");
+
+    // Log propre
+    if (out) {
+      process.stdout.write(`AI Result: [${out}]\n`);
+    } else {
+      process.stdout.write("AI Result: Empty or invalid\n");
     }
 
-    try {
-        console.log("Envoi à Ollama pour modification...");
-        const response = await globalClient.chat.completions.create({
-            model: "qwen3.5:0.8b", 
-            messages: [
-                { role: "system", content: system_prompt },
-                { role: "user", content: content },
-            ],
-            temperature: 0.1, 
-        });
-
-        console.log("Réponse d'Ollama:", response.choices[0].message.content);
-        return response.choices[0].message.content;
-    } catch (error) {
-        console.error("Erreur Ollama:", error.message);
-        return content; 
-    }
+    return out;
+  } catch (error) {
+    process.stderr.write(`AI request error: ${error?.message || error}\n`);
+    return "";
+  }
 }

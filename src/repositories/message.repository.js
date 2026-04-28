@@ -1,6 +1,17 @@
 import { prisma } from "../config/prisma.js";
 
 export class MessageRepository {
+
+  async findById(id) {
+    return prisma.message.findUnique({
+      where: { id },
+      include: {
+        sender: true,
+        recipient: true,
+      },
+    });
+  }
+
   /**
    * Create a message with sender and recipient relations.
    *

@@ -1,5 +1,4 @@
-/* global process */
-import redis from './upstash.client.js';
+import redis from "./upstash.client.js";
 
 const DEFAULT_TTL = Number(process.env.CACHE_DEFAULT_TTL || 300);
 
