@@ -1,10 +1,10 @@
 import "dotenv/config";
-/* global process */
 import { createServer } from "./src/server.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
+const HOST = process.env.HOST ?? "0.0.0.0";
 const { httpServer } = createServer();
 
-httpServer.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+httpServer.listen(PORT, HOST, () => {
+  process.stdout.write(`Server listening on http://${HOST}:${PORT}\n`);
 });

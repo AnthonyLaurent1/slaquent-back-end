@@ -1,6 +1,6 @@
 # SLAquent — Documentation backend
 
-Ce document décrit les routes HTTP exposées par le backend et l'usage du WebSocket (Socket.IO) pour l'application de chat. Il est destiné aux équipes frontend et mobile.
+Ce document décrit les routes HTTP exposées par le backend et l"usage du WebSocket (Socket.IO) pour l"application de chat. Il est destiné aux équipes frontend et mobile.
 
 Base URL
 
@@ -8,7 +8,7 @@ Base URL
 - Swagger UI : `/api-docs` (ex: `http://localhost:3000/api-docs`).
 - Le WebSocket utilise Socket.IO sur la même origine que le serveur HTTP (ex: `https://api.example.com` ou `http://localhost:3000`).
 
-Format d'erreur
+Format d"erreur
 
 - Les réponses HTTP en erreur retournent un objet JSON :
 
@@ -26,7 +26,7 @@ Toutes les routes sont préfixées par `/api`.
 
 - Description : lister tous les utilisateurs.
 - Requête : aucune.
-- Réponse (200) : tableau d'utilisateurs.
+- Réponse (200) : tableau d"utilisateurs.
 
 Exemple de user :
 
@@ -47,7 +47,7 @@ Exemple de user :
 
 3. GET /api/users/:userId/rooms
 
-- Description : lister les rooms (conversations directes) auxquelles l'utilisateur participe.
+- Description : lister les rooms (conversations directes) auxquelles l"utilisateur participe.
 - Paramètres : `:userId` (entier).
 - Réponse (200) : tableau de rooms. Chaque room inclut les participants (`userA`, `userB`) et, potentiellement, le dernier message dans `messages` (liste triée, `take:1`).
 
@@ -76,11 +76,11 @@ Exemple de room :
 
 5. GET /api/rooms/:roomId/messages
 
-- Description : lister les messages d'une room.
-- Effet de bord : si `userId` est le destinataire de messages non lus de la room, le backend renseigne `readAt` au moment de cet appel. Ce comportement ne s'applique pas à `GET /api/users/:userId/rooms` utilisé pour les aperçus de l'accueil.
+- Description : lister les messages d"une room.
+- Effet de bord : si `userId` est le destinataire de messages non lus de la room, le backend renseigne `readAt` au moment de cet appel. Ce comportement ne s"applique pas à `GET /api/users/:userId/rooms` utilisé pour les aperçus de l"accueil.
 - Paramètres : `:roomId` (entier).
 - Query params :
-  - `userId` (entier) — l'utilisateur qui demande (vérification d'accès)
+  - `userId` (entier) — l"utilisateur qui demande (vérification d"accès)
   - `limit` (entier, optionnel) — max de messages (défaut 50)
 - Réponse (200) : tableau de messages (ordre ascendant par `createdAt`).
 
@@ -104,7 +104,7 @@ Exemple de message :
 
 - Description : lister les messages publics.
 - Réponse (200) : tableau de messages publics triés par `createdAt` décroissant.
-- Structure d'un message public : identique à un message, avec `sender` inclus et `recipient` omis.
+- Structure d"un message public : identique à un message, avec `sender` inclus et `recipient` omis.
 
 ## WebSocket (Socket.IO)
 
@@ -112,7 +112,7 @@ Le backend expose un gateway Socket.IO (`registerChatGateway(io)`). Les événem
 
 Connexion
 
-- URL : `io(<server-url>)` (ex: `io('https://api.example.com')`). Aucune authentification complexe : la session est identifiée par `userId` envoyé via `session:register`.
+- URL : `io(<server-url>)` (ex: `io("https://api.example.com")`). Aucune authentification complexe : la session est identifiée par `userId` envoyé via `session:register`.
 
 1. Événement client -> serveur : `session:register`
 
@@ -146,8 +146,8 @@ Comportement serveur :
 
 - Vérifie que `socket.data.userId === senderId` (sinon `ROOM_ACCESS_DENIED`).
 - Crée le message et la room si nécessaire, met à jour la room.
-- Émet sur la room personnelle de l'expéditeur `user:<senderId>` l'événement `message:sent` (contenant `room` et `message`).
-- Émet sur la room personnelle du destinataire `user:<recipientId>` l'événement `message:received` (contenant le `message`).
+- Émet sur la room personnelle de l"expéditeur `user:<senderId>` l"événement `message:sent` (contenant `room` et `message`).
+- Émet sur la room personnelle du destinataire `user:<recipientId>` l"événement `message:received` (contenant le `message`).
 
 3. Événements de mise à jour de statut message
 
@@ -160,7 +160,7 @@ Comportement serveur :
 
   { "userId": number, "online": boolean }
 
-  Cela permet aux clients d'afficher l'état en ligne/hors-ligne d'un utilisateur.
+  Cela permet aux clients d"afficher l"état en ligne/hors-ligne d"un utilisateur.
 
 Exemples rapides (client JS avec Socket.IO client)
 
@@ -169,7 +169,7 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:3000");
 
-// S'enregistrer
+// S"enregistrer
 socket.emit("session:register", { userId: 1 }, (res) => {
   if (!res.ok) console.error("session failed", res.error);
   else console.log("pending messages:", res.pendingMessages);
@@ -206,11 +206,11 @@ socket.on("presence:updated", ({ userId, online }) => {
 
 ## Bonnes pratiques et remarques
 
-- Le backend s'appuie uniquement sur `userId` pour identifier la session Socket.IO. Il faut donc s'assurer côté client qu'on n'usurpe pas d'identité (par ex. via un handshake/auth additionnel si besoin).
+- Le backend s"appuie uniquement sur `userId` pour identifier la session Socket.IO. Il faut donc s"assurer côté client qu"on n"usurpe pas d"identité (par ex. via un handshake/auth additionnel si besoin).
 - Les callbacks socket fournissent toujours un retour `{ ok: boolean }` — utile pour gérer erreurs côté client.
-- Pour optimiser : écouter `presence:updated` et maintenir un état local d'occupancy.
+- Pour optimiser : écouter `presence:updated` et maintenir un état local d"occupancy.
 - Les champs retournés suivent le schéma Prisma utilisé par les repositories : `user` (`id`, `username`), `directRoom` (participants, `messages`), `message` (sender/recipient inclus, `createdAt`, `deliveredAt`, `readAt`).
 
 Contact
 
-- Pour toute question sur cette API, contacter l'équipe backend.
+- Pour toute question sur cette API, contacter l"équipe backend.

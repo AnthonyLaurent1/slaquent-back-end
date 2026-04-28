@@ -32,6 +32,79 @@ function emitPresence(io, userId) {
   });
 }
 
+async function handleSessionRegister(io, socket, payload, callback) {
+  try {
+    const userId = Number(payload?.userId);
+    await chatService.requireUser(userId);
+
+    socket.data.userId = userId;
+    presence.connect(userId, socket.id);
+    socket.join(personalChannel(userId));
+
+    const pendingMessages = await chatService.flushPendingMessages(userId);
+    pendingMessages.forEach((message) => {
+      socket.emit("message:received", message);
+    });
+
+    emitPresence(io, userId);
+    callback?.({
+      ok: true,
+      pendingMessages: pendingMessages.length,
+    });
+  } catch (error) {
+    callback?.({
+      ok: false,
+      error: error.message,
+    });
+  }
+}
+
+async function handleMessageSend(io, socket, payload, callback) {
+  try {
+    const senderId = Number(payload?.senderId);
+    const recipientId = Number(payload?.recipientId);
+    const content = payload?.content;
+    if (socket.data.userId !== senderId) {
+      throw new Error("ROOM_ACCESS_DENIED");
+    }
+
+    const { room, message } = await chatService.createMessage(
+      senderId,
+      recipientId,
+      content,
+    );
+
+    io.to(personalChannel(senderId)).emit("message:sent", {
+      room,
+      message,
+    });
+
+    io.to(personalChannel(recipientId)).emit("message:received", message);
+
+    // publish event for other instances to consume
+    await safePublishRoomMessage(room, message);
+
+    callback?.({
+      ok: true,
+      roomId: room.id,
+      messageId: message.id,
+    });
+  } catch (error) {
+    callback?.({
+      ok: false,
+      error: error.message,
+    });
+  }
+}
+
+async function safePublishRoomMessage(room, message) {
+  try {
+    await cache.publish(`room:${room.id}:messages`, { type: "message:new", payload: message });
+  } catch (err) {
+    process.stderr.write(`cache publish error ${err?.message || err}\n`);
+  }
+}
+
 /**
  * Register chat gateway socket events.
  *
@@ -42,74 +115,12 @@ function emitPresence(io, userId) {
  */
 export function registerChatGateway(io) {
   io.on("connection", (socket) => {
-    socket.on("session:register", async (payload, callback) => {
-      try {
-        const userId = Number(payload?.userId);
-        await chatService.requireUser(userId);
-
-        socket.data.userId = userId;
-        presence.connect(userId, socket.id);
-        socket.join(personalChannel(userId));
-
-        const pendingMessages = await chatService.flushPendingMessages(userId);
-        pendingMessages.forEach((message) => {
-          socket.emit("message:received", message);
-        });
-
-        emitPresence(io, userId);
-        callback?.({
-          ok: true,
-          pendingMessages: pendingMessages.length,
-        });
-      } catch (error) {
-        callback?.({
-          ok: false,
-          error: error.message,
-        });
-      }
+    socket.on("session:register", (payload, callback) => {
+      void handleSessionRegister(io, socket, payload, callback);
     });
 
-    socket.on("message:send", async (payload, callback) => {
-      try {
-        const senderId = Number(payload?.senderId);
-        const recipientId = Number(payload?.recipientId);
-        const content = payload?.content;
-        if (socket.data.userId !== senderId) {
-          throw new Error("ROOM_ACCESS_DENIED");
-        }
-
-        const { room, message } = await chatService.createMessage(
-          senderId,
-          recipientId,
-          content,
-        );
-
-        io.to(personalChannel(senderId)).emit("message:sent", {
-          room,
-          message,
-        });
-
-        io.to(personalChannel(recipientId)).emit("message:received", message);
-
-        // publish event for other instances to consume
-        try {
-          await cache.publish(`room:${room.id}:messages`, { type: 'message:new', payload: message });
-        } catch (err) {
-          // non-fatal — log for debugging
-          console.debug('cache publish error', err?.message || err);
-        }
-
-        callback?.({
-          ok: true,
-          roomId: room.id,
-          messageId: message.id,
-        });
-      } catch (error) {
-        callback?.({
-          ok: false,
-          error: error.message,
-        });
-      }
+    socket.on("message:send", (payload, callback) => {
+      void handleMessageSend(io, socket, payload, callback);
     });
 
     socket.on("message:delivered", async (payload) => {
